@@ -1,0 +1,31 @@
+{
+  "name": "mcd-token-burger",
+  "version": "0.1.0",
+  "description": "把你让 AI 烧掉的 token，换算成附近麦当劳的汉堡（基于麦当劳 MCP 实时核价）",
+  "type": "module",
+  "bin": {
+    "mcd-token-burger": "bin/mcd-token-burger.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skills"
+  ],
+  "scripts": {
+    "start": "node bin/mcd-token-burger.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcdonalds",
+    "mcp",
+    "claude-code",
+    "codex",
+    "token",
+    "skill"
+  ],
+  "author": "月时",
+  "license": "MIT"
+}
