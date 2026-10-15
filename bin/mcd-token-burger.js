@@ -95,8 +95,15 @@ async function main() {
 
   const hasToken = Boolean(process.env.MCD_MCP_TOKEN);
   let mcd = null;
+  let mcdError = null;
   if (hasToken && opts.city && opts.keyword) {
-    mcd = await burgerPrice(opts);
+    // 麦当劳 MCP 出错（比如门店打烊）时，仍然展示 token 和金额
+    mcd = await burgerPrice(opts).catch((err) => {
+      mcdError = err;
+      return null;
+    });
+  }
+  if (mcd) {
     const yuan = mcd.price.fen / 100;
     result.burger = {
       count: cny / yuan,
@@ -109,6 +116,9 @@ async function main() {
         (mcd.coupons ? ` · 你有 ${mcd.coupons} 张券可在这家店用` : ''),
     };
     if (!opts.order) result.hint = `AI 吃了 ${Math.floor(result.burger.count)} 个，你也吃一个？加上 --order 生成下单链接`;
+  } else if (mcdError) {
+    result.burgerError = mcdError.message;
+    result.hint = `麦当劳 MCP 暂时查不到价格：${mcdError.message}`;
   } else if (hasToken) {
     result.hint = '加上 --city 和 --keyword（例如 --city 深圳 --keyword 科技园）按附近门店实时价换算';
   } else {
@@ -122,6 +132,7 @@ async function main() {
   }
 
   if (!opts.order) return;
+  if (mcdError) throw new Error('没有拿到门店价格，无法下单');
   if (!mcd) throw new Error('--order 需要 MCD_MCP_TOKEN、--city 和 --keyword');
   const takeWay = mcd.price.takeWays[0];
   if (!takeWay?.code) throw new Error('核价结果没有返回取餐方式（takeWayList），无法下单');

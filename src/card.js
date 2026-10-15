@@ -48,7 +48,7 @@ export function renderCard(r) {
     out.push(dim(`  ${r.burger.priceLabel}`));
   } else {
     out.push(`  ≈ ${bold('?')} 个巨无霸`);
-    out.push(dim('  设置 MCD_MCP_TOKEN 和 --city/--keyword，按你附近门店的实时价换算'));
+    if (!r.burgerError) out.push(dim('  设置 MCD_MCP_TOKEN 和 --city/--keyword，按你附近门店的实时价换算'));
   }
   out.push(dim(`  汇率 1 USD = ${r.fx} CNY · token 按 API 公开价折算，订阅用户的实际花费不同`));
   if (r.hint) out.push(`  ${yellow(r.hint)}`);
