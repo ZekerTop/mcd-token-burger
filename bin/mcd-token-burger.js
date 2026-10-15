@@ -106,7 +106,7 @@ async function main() {
       coupons: mcd.coupons,
       priceLabel:
         `${mcd.store.name} · ${mcd.item.name} ${fmtMoney(yuan, '¥')}（麦当劳 MCP 实时核价 ${hhmm(mcd.at)}）` +
-        (mcd.coupons === null ? '' : ` · 门店可用券 ${mcd.coupons} 张`),
+        (mcd.coupons ? ` · 你有 ${mcd.coupons} 张券可在这家店用` : ''),
     };
     if (!opts.order) result.hint = `AI 吃了 ${Math.floor(result.burger.count)} 个，你也吃一个？加上 --order 生成下单链接`;
   } else if (hasToken) {
@@ -123,13 +123,13 @@ async function main() {
 
   if (!opts.order) return;
   if (!mcd) throw new Error('--order 需要 MCD_MCP_TOKEN、--city 和 --keyword');
-  const takeWay = mcd.price.takeWays[0]?.code;
-  if (!takeWay) throw new Error('核价结果没有返回取餐方式（takeWayList），无法下单');
+  const takeWay = mcd.price.takeWays[0];
+  if (!takeWay?.code) throw new Error('核价结果没有返回取餐方式（takeWayList），无法下单');
   const ok =
     opts.yes ||
-    (await confirm(`将在「${mcd.store.name}」创建 1 份「${mcd.item.name}」到店自取订单（待支付，不会自动扣款）。继续？[y/N] `));
+    (await confirm(`将在「${mcd.store.name}」创建 1 份「${mcd.item.name}」到店订单，取餐方式「${takeWay.title || takeWay.code}」（待支付，不会自动扣款）。继续？[y/N] `));
   if (!ok) return console.log('已取消，没有创建订单。');
-  const order = await mcd.client.createOrder(mcd.store, mcd.item, takeWay);
+  const order = await mcd.client.createOrder(mcd.store, mcd.item, takeWay.code);
   console.log(`\n  订单已创建${order.orderId ? `：${order.orderId}` : ''}，状态为待支付。`);
   console.log(order.payUrl ? `  支付链接：${order.payUrl}` : '  没有在返回结果中找到支付链接，请到麦当劳 App 查看订单。');
   console.log('  支付前不会扣款；不需要的话请在麦当劳 App 里取消这笔订单。\n');
