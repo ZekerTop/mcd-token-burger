@@ -223,9 +223,9 @@ McDonald's MCP: query-nearby-stores → query-meals → calculate-price ──�
 rate = Big Mac price ÷ average API price per token
 ```
 
-From the author's machine over the last 7 days: 2.399 billion tokens cost about ¥4,661.93 at API prices, an average of ¥1.94 per million tokens. A Big Mac costs ¥25.50, so 1 Big Mac ≈ 13.12 million tokens.
+From the author's machine over the last 7 days: 2.414 billion tokens cost about ¥4,675.68 at API prices, an average of ¥1.94 per million tokens. A Big Mac costs ¥25.50, so 1 Big Mac ≈ 13.17 million tokens.
 
-Why do the totals so often reach hundreds of millions? On every step, an agent sends the whole conversation and every file it has read back to the model, so the same context gets counted dozens of times. These are cache reads. On the author's machine, 96% of tokens were cache reads, and only 99.04 million tokens were newly processed. Cache reads cost a tenth of the normal input price or less, so hundreds of millions of tokens don't cost hundreds of millions of tokens' worth of money. The card lists this share separately.
+Why do the totals so often reach hundreds of millions? On every step, an agent sends the whole conversation and every file it has read back to the model, so the same context gets counted dozens of times. These are cache reads. On the author's machine, 96% of tokens were cache reads, and only 99.29 million tokens were newly processed. Cache reads cost a tenth of the normal input price or less, so hundreds of millions of tokens don't cost hundreds of millions of tokens' worth of money. The card lists this share separately.
 
 The rate depends on two things: the store's price and how you use AI. The higher your cache share and the cheaper your models, the cheaper each token is, and the more tokens one Big Mac is worth.
 
