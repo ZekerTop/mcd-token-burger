@@ -18,7 +18,7 @@
 | `query-meals` | 获取门店当前在售菜单 | `storeCode`, `orderType: 1`, `beType: 1`；当前时段没有该餐品时加 `reservationDate` | `meals` 中的餐品编码和名称 |
 | `calculate-price` | 对选中的餐品做官方核价 | 同上，加 `items: [{ productCode, quantity: 1 }]` | `price`（分，含门店自动优惠）、`originalPrice`、`takeWayList` |
 | `query-store-coupons` | 统计用户在该门店可用的券（有券时提示） | `storeCode`, `orderType: 1`, `beType: 1` | 券列表长度 |
-| `create-order` | 仅在用户加 `--order` 并确认后，创建 1 份到店订单（确认时会显示取餐方式） | 同核价参数，加 `takeWayCode`（取自 `takeWayList`） | 订单号、支付链接 |
+| `create-order` | 仅在用户加 `--order` 并确认后，创建 1 份到店订单（确认时会显示取餐方式） | 同核价参数，加 `takeWayCode`（取自 `takeWayList`，`--pickup 外带` 时选外带） | 订单号、支付链接、付款截止时间 `expirePayTime` |
 
 Skill 模式下，如果 Agent 已接好麦当劳 MCP，会由 Agent 直接按同样的顺序调用这些 Tool，见 [`skills/mcd-token-burger/SKILL.md`](skills/mcd-token-burger/SKILL.md)。
 
@@ -41,7 +41,7 @@ Skill 模式下，如果 Agent 已接好麦当劳 MCP，会由 Agent 直接按�
 ## 业务价值
 
 - **用真实价格做换算单位**：汉堡数来自 `calculate-price` 的官方核价，包含门店自动优惠，不是写死的菜单价。同一笔 token，在不同城市、不同门店换算出来的结果也不一样。
-- **从好玩到下单只差一步**：看完卡片想吃，加 `--order` 就能拿到支付链接，用到了点餐的完整链路：门店、菜单、核价、取餐方式、下单。
+- **从好玩到犒劳自己只差一步**：AI 替你干了这么多活，看完卡片想犒劳一下自己，加 `--order` 就能拿到支付链接，用到了点餐的完整链路：门店、菜单、核价、取餐方式（堂食或外带）、下单。2026-10-16 实测下过一单外带巨无霸，待支付订单的付款时限是 15 分钟。
 - **适合传播**：程序员在 1024 前后晒「AI 这周吃了我 N 个巨无霸」，卡片上带着门店和实时价。
 
 ## 安全与合规

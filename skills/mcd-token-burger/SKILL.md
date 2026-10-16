@@ -1,6 +1,6 @@
 ---
 name: mcd-token-burger
-description: 把用户在 Claude Code / Codex 里消耗的 AI token 按 API 公开价折算成人民币，再用麦当劳 MCP 查附近门店的实时核价，换算成「AI 吃掉了几个巨无霸」，用户要求时生成一份待支付的到店订单（不自动付款）。用户说「我的 token 能换几个汉堡」「AI 这周吃了多少个巨无霸」「token 汉堡汇率」时使用。
+description: 把用户在 Claude Code / Codex 里消耗的 AI token 按 API 公开价折算成人民币，再用麦当劳 MCP 查附近门店的实时核价，换算成「AI 吃掉了几个巨无霸」，用户想犒劳自己时生成一份待支付的到店订单（堂食或外带，不自动付款）。用户说「我的 token 能换几个汉堡」「AI 这周吃了多少个巨无霸」「token 汉堡汇率」「犒劳一下自己」时使用。
 ---
 
 # Token 汉堡汇率
@@ -50,19 +50,21 @@ npx -y github:ZekerTop/mcd-token-burger --json --days 7
 - 汇率默认 1 USD = 7.1 CNY。
 - `usage.estimated` 为 true 时，说明部分型号按同家族价格估算。
 
-## 第 4 步（可选）：帮用户点一个
+最后可以用一句话收尾：AI 替用户干了这么多活，问要不要犒劳一下自己，点一个。只问一次，用户没接话就不再提。
+
+## 第 4 步（可选）：犒劳自己，帮用户点一个
 
 只有用户**明确要求**时才下单：
 
-1. 用第 2 步 `calculate-price` 返回的 `takeWayList[0].code` 作为 `takeWayCode`。
-2. 调用 `create-order`：`storeCode, orderType: 1, beType: 1, takeWayCode, items: [{ productCode, quantity: 1 }]`。如果第 2 步用了 `reservationDate`，这里也带上，并提前告诉用户这是预约单。
-3. 把返回的支付链接交给用户自己支付。
+1. 先在对话里告诉用户门店、餐品、价格，以及可选的取餐方式（`calculate-price` 返回的 `takeWayList`，目前是「堂食」和「外带（店外取餐柜）」），问清选哪种、要不要下单。用户已经说了「外带」或「堂食」，就直接用。
+2. 用户明确同意后，用选中那一项的 `code` 作为 `takeWayCode`，调用 `create-order`：`storeCode, orderType: 1, beType: 1, takeWayCode, items: [{ productCode, quantity: 1 }]`。如果第 2 步用了 `reservationDate`，这里也带上，并提前告诉用户这是预约单。
+3. 把返回的支付链接交给用户自己支付，并提醒：**待支付订单要在 15 分钟内付款**（以返回的 `expirePayTime` 为准），过期就失效，不会扣钱。
 
 没有连接麦当劳 MCP、但环境变量里有 `MCD_MCP_TOKEN` 时，改用命令行下单：
 
-1. 先在对话里告诉用户门店、餐品、价格和取餐方式，问清楚要不要下单。
-2. 用户明确同意后，运行 `npx -y github:ZekerTop/mcd-token-burger --today --city <城市> --keyword <地点> --order --yes`。必须加 `--yes`，否则命令行会停在 `[y/N]` 确认提示上，Agent 没法回答。
-3. 从输出里找到订单号和支付链接，交给用户。
+1. 先在对话里告诉用户门店、餐品、价格和可选的取餐方式（第 1 步 JSON 里的 `burger.takeWays`），问清选哪种、要不要下单。
+2. 用户明确同意后，运行 `npx -y github:ZekerTop/mcd-token-burger --today --city <城市> --keyword <地点> --order --pickup <堂食|外带> --yes`。必须加 `--yes`，否则命令行会停在 `[y/N]` 确认提示上，Agent 没法回答。
+3. 从输出里找到订单号、支付链接和付款截止时间，交给用户，提醒在截止时间前付款。
 
 本 Skill 不会自动付款。
 

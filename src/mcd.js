@@ -134,7 +134,8 @@ export class McdClient {
       takeWayCode,
       items: [{ productCode: item.code, quantity: 1 }],
     });
-    return { orderId: data.orderId || data.orderNo || null, payUrl: findUrl(data), raw: data };
+    const expireAt = data.expirePayTime || data.orderDetail?.expirePayTime || null;
+    return { orderId: data.orderId || data.orderNo || null, payUrl: findUrl(data), expireAt, raw: data };
   }
 }
 

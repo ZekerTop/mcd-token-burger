@@ -45,7 +45,7 @@ const tools = {
     data: { price: 2290, originalPrice: 2500, productList: [{ productCode: args.items[0].productCode, subtotal: 2290 }], takeWayList: [{ code: 'eat-in' }] },
   }),
   'query-store-coupons': () => ({ success: true, data: { coupons: [{ couponId: 'a' }, { couponId: 'b' }] } }),
-  'create-order': () => ({ success: true, data: { orderId: 'O123', payInfo: { payH5Url: 'https://pay.example/x' } } }),
+  'create-order': () => ({ success: true, data: { orderId: 'O123', payInfo: { payH5Url: 'https://pay.example/x' }, orderDetail: { expirePayTime: '2026-10-16 15:27:44' } } }),
 };
 
 test('完整链路：找门店 → 取菜单 → 官方核价 → 门店券 → 待支付订单', async () => {
@@ -59,7 +59,7 @@ test('完整链路：找门店 → 取菜单 → 官方核价 → 门店券 → 
   assert.equal(price.fen, 2290);
   assert.equal(await c.countCoupons(store), 2);
   const order = await c.createOrder(store, item, price.takeWays[0].code);
-  assert.deepEqual([order.orderId, order.payUrl], ['O123', 'https://pay.example/x']);
+  assert.deepEqual([order.orderId, order.payUrl, order.expireAt], ['O123', 'https://pay.example/x', '2026-10-16 15:27:44']);
 
   const toolCalls = calls.filter((x) => x.body.method === 'tools/call').map((x) => x.body.params);
   assert.deepEqual(toolCalls[0].arguments, { searchType: 2, beType: 1, city: '深圳', keyword: '科技园' });

@@ -2,9 +2,9 @@
 
 [中文](README.md) | **English**
 
-**How many Big Macs are your AI tokens worth?**
+**How many Big Macs are your AI tokens worth? Your AI has eaten that many. Treat yourself to one.**
 
-Ask your AI, "How many Big Macs are my tokens worth this week?" It totals the tokens you have used in Claude Code and Codex, converts them to RMB at public API prices, and checks the **live price** at a McDonald's near you through the [McDonald's China MCP](https://open.mcd.cn/mcp) to tell you how many burgers that money buys. Hungry? Say "order one for me" and it creates an order for you to pay yourself.
+Ask your AI, "How many Big Macs are my tokens worth this week?" It totals the tokens you have used in Claude Code and Codex, converts them to RMB at public API prices, and checks the **live price** at a McDonald's near you through the [McDonald's China MCP](https://open.mcd.cn/mcp) to tell you how many burgers that money buys. Your AI did a day's work, and so did you. Say "treat myself, order one for me" and it creates an in-store order, dine-in or takeaway, for you to pay yourself.
 
 **You do everything by chatting. No commands to type.**
 
@@ -30,10 +30,9 @@ Ask your AI, "How many Big Macs are my tokens worth this week?" It totals the to
 
 ## Who it's for
 
-- **Developers who code with Claude Code or Codex every day** and want to see how much their AI "ate" this week.
+- **Developers who've coded all day and want to treat themselves.** See how much your AI "ate" this week, then have it order one for you too.
 - **Claude Max or ChatGPT Pro subscribers** curious about how much their plan saves them compared with API prices.
 - **Anyone who wants a fun line for a team update or social post.** "My AI ate 180 Big Macs this week" lands better than "I used 2.1 billion tokens".
-- **People who'd like a McDonald's order out of it.** The AI can place the order right after answering, and you still pay for it yourself.
 
 ## What it does
 
@@ -43,7 +42,7 @@ Ask your AI, "How many Big Macs are my tokens worth this week?" It totals the to
 | "What about today?" "This month?" | Recalculates for that period |
 | "Use the McSpicy instead" | Uses your chosen item as the unit. It still matches when the menu name is slightly different, and it prefers the single item over a meal |
 | Asking at 8 a.m. | Big Macs aren't sold at breakfast, so it uses the store's lunch price for today and tells you so |
-| "Order one for me" | Tells you the store, item, price and pickup method, waits for your OK, then creates one unpaid order and gives you the payment link. Nothing is charged automatically |
+| "Treat myself, order one for me, takeaway" | Tells you the store, item and price, asks whether you want dine-in or takeaway, waits for your OK, then creates one unpaid order, gives you the payment link and reminds you to pay within 15 minutes. Nothing is charged automatically |
 
 ## Get started in 3 steps
 
@@ -105,11 +104,11 @@ Tell your AI:
 
 Use your own city and area. The AI counts the tokens, finds the store and checks the price. The result looks like the screenshot at the top of this page.
 
-If you want one:
+Your AI did all that work. Treat yourself too:
 
-> Order one for me.
+> Treat myself, order one for me, takeaway.
 
-The AI tells you the store, item, price and pickup method first, and creates the order **only after you agree**. Then it gives you the payment link. The order stays unpaid until you pay, so nothing is charged if you don't. You can cancel it in the McDonald's app.
+The AI tells you the store, item, price and pickup method (dine-in or takeaway) first, and creates the order **only after you agree**. Then it gives you the payment link. The order stays unpaid until you pay, and **must be paid within 15 minutes** or it expires. Nothing is charged if you don't pay.
 
 ## Install guide for AI agents
 
@@ -181,10 +180,13 @@ npx -y github:ZekerTop/mcd-token-burger --today --item 麦辣鸡腿堡 --city �
 
 ### Order
 
-With `--order`, the tool shows the store, item and pickup method, then waits for you to type `y`. Once you confirm, it creates one unpaid order and returns a payment link. Nothing is charged automatically. In this screenshot the answer was `n`, so no order was created.
+With `--order`, the tool shows the store, item and pickup method, then waits for you to type `y`. Once you confirm, it creates one unpaid order and returns a payment link and payment deadline (15 minutes after ordering, in testing). Nothing is charged automatically. In this screenshot the answer was `n`, so no order was created.
+
+The pickup method defaults to the first one the store returns (currently dine-in). For takeaway, add `--pickup 外带`:
 
 ```bash
 npx -y github:ZekerTop/mcd-token-burger --city 深圳 --keyword 科技园 --order
+npx -y github:ZekerTop/mcd-token-burger --city 深圳 --keyword 科技园 --order --pickup 外带
 ```
 
 ![Order confirmation](docs/images/order.png)
@@ -199,7 +201,8 @@ npx -y github:ZekerTop/mcd-token-burger --city 深圳 --keyword 科技园 --orde
 | See the last 30 days | `--days 30` |
 | Count from a given date | `--since 2026-10-01` |
 | Use a different item as the unit | `--item 麦辣鸡腿堡` |
-| Get an order link | `--order` (asks first; add `--yes` to skip the prompt) |
+| Treat yourself with an order link | `--order` (asks first; add `--yes` to skip the prompt) |
+| Takeaway | `--pickup 外带` (default is dine-in, 堂食) |
 | Change the USD exchange rate | `--fx 7.2` (default 7.1) |
 | Get JSON | `--json` |
 
@@ -270,6 +273,9 @@ The McDonald's MCP returned an error. For example, the token may have expired, o
 **I only use Codex (or only Claude Code). Will it work?**
 Yes. Whichever tool has no logs is skipped.
 
+**How long do I have to pay after ordering?**
+In testing, unpaid orders had to be paid within 15 minutes or they expired, with nothing charged. Both the AI and the CLI tell you the deadline.
+
 **The numbers don't match my bill.**
 It uses public API prices. On a subscription, you pay the subscription fee instead. On the API, some platforms add discounts or extra fees.
 
@@ -277,7 +283,7 @@ It uses public API prices. On a subscription, you pay the subscription fee inste
 
 - Only Claude Code and Codex are supported so far.
 - GPT prices come from third-party data. The exchange rate is fixed at 7.1; you can ask the AI to recalculate with a different rate.
-- The tool uses the first store in the search results, which is the nearest one. It supports in-store pickup only, and uses the first pickup method returned by the price check (currently 堂食, dine-in).
+- The tool uses the first store in the search results, which is the nearest one. It supports in-store pickup only: dine-in or takeaway (from the locker outside the store). It defaults to the first pickup method returned by the price check (currently 堂食, dine-in). Tell the AI "takeaway", or add `--pickup 外带` on the command line.
 - The author has tested it in Claude Code on macOS. WorkBuddy, Windows and Linux should work the same way but haven't been tested yet.
 
 ## Development

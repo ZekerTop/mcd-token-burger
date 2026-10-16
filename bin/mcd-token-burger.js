@@ -20,7 +20,8 @@ mcd-token-burger —— 把你让 AI 烧掉的 token，换算成附近麦当劳�
   --city <城市>      例如 深圳（也可用环境变量 MCD_CITY）
   --keyword <地点>   例如 科技园（也可用环境变量 MCD_KEYWORD）
   --item <餐品>      换算用的餐品关键词，默认 巨无霸
-  --order            为这份餐品生成一笔到店的待支付订单，返回支付链接（会先确认）
+  --order            犒劳一下自己：为这份餐品生成一笔到店的待支付订单，返回支付链接（会先确认）
+  --pickup <方式>    配合 --order 选取餐方式：堂食 或 外带，默认用门店返回的第一种
   --yes              配合 --order 跳过确认
 
 其他：
@@ -39,6 +40,7 @@ function parse() {
       keyword: { type: 'string', default: process.env.MCD_KEYWORD },
       item: { type: 'string', default: '巨无霸' },
       order: { type: 'boolean' },
+      pickup: { type: 'string' },
       yes: { type: 'boolean' },
       fx: { type: 'string', default: '7.1' },
       json: { type: 'boolean' },
@@ -115,13 +117,14 @@ async function main() {
       store: mcd.store,
       priceFen: mcd.price.fen,
       coupons: mcd.coupons,
+      takeWays: mcd.price.takeWays.map((t) => t.title || t.code),
       priceLabel:
         `${mcd.store.name} · ${mcd.item.name} ${fmtMoney(yuan, '¥')}（麦当劳 MCP 实时核价 ${hhmm(mcd.at)}` +
         (mcd.item.reservation ? ` · 现在没在卖，按${slotLabel(mcd.item.reservation)}时段` : '') +
         '）' +
         (mcd.coupons ? ` · 你有 ${mcd.coupons} 张券可在这家店用` : ''),
     };
-    if (!opts.order) result.hint = `AI 吃了 ${Math.floor(result.burger.count)} 个，你也吃一个？加上 --order 生成下单链接`;
+    if (!opts.order) result.hint = `AI 替你干活吃掉了 ${Math.floor(result.burger.count)} 个，也犒劳一下自己？加上 --order 点一个`;
   } else if (mcdError) {
     result.burgerError = mcdError.message;
     result.hint = `麦当劳 MCP 暂时查不到价格：${mcdError.message}`;
@@ -140,16 +143,19 @@ async function main() {
   if (!opts.order) return;
   if (mcdError) throw new Error('没有拿到门店价格，无法下单');
   if (!mcd) throw new Error('--order 需要 MCD_MCP_TOKEN、--city 和 --keyword');
-  const takeWay = mcd.price.takeWays[0];
-  if (!takeWay?.code) throw new Error('核价结果没有返回取餐方式（takeWayList），无法下单');
+  const takeWays = mcd.price.takeWays.filter((t) => t?.code);
+  if (!takeWays.length) throw new Error('核价结果没有返回取餐方式（takeWayList），无法下单');
+  const takeWay = opts.pickup ? takeWays.find((t) => t.title === opts.pickup || t.code === opts.pickup) : takeWays[0];
+  if (!takeWay) throw new Error(`这家店没有「${opts.pickup}」，可选：${takeWays.map((t) => t.title || t.code).join('、')}`);
   const ok =
     opts.yes ||
-    (await confirm(`将在「${mcd.store.name}」创建 1 份「${mcd.item.name}」到店订单，取餐方式「${takeWay.title || takeWay.code}」${mcd.item.reservation ? `，预约 ${mcd.item.reservation.time} 取餐` : ''}（待支付，不会自动扣款）。继续？[y/N] `));
+    (await confirm(`将在「${mcd.store.name}」创建 1 份「${mcd.item.name}」到店订单，取餐方式「${takeWay.title || takeWay.code}」${mcd.item.reservation ? `，预约 ${mcd.item.reservation.time} 取餐` : ''}（待支付，下单后约 15 分钟内要付款，不会自动扣款）。继续？[y/N] `));
   if (!ok) return console.log('已取消，没有创建订单。');
   const order = await mcd.client.createOrder(mcd.store, mcd.item, takeWay.code);
   console.log(`\n  订单已创建${order.orderId ? `：${order.orderId}` : ''}，状态为待支付。`);
   console.log(order.payUrl ? `  支付链接：${order.payUrl}` : '  没有在返回结果中找到支付链接，请到麦当劳 App 查看订单。');
-  console.log('  支付前不会扣款；不需要的话请在麦当劳 App 里取消这笔订单。\n');
+  console.log(order.expireAt ? `  请在 ${order.expireAt} 前付款，过期订单会失效。` : '  待支付订单有付款时限（实测 15 分钟），过期会失效。');
+  console.log('  支付前不会扣款；不想要了，不付款就行。\n');
 }
 
 main().catch((err) => {
