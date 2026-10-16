@@ -221,11 +221,18 @@ export function normalizeMeals(data) {
     .filter((m) => m.code && m.name);
 }
 
-// 名字包含关键词的餐品里，优先单品（不含套餐/件套），再取名字最短的那个
+// 菜单名和习惯叫法常差一两个字（「麦辣鸡腿堡」在菜单上叫「麦辣鸡腿汉堡」），所以按字的先后顺序匹配。
+// 排序：优先单品（不含套餐/件套），其次名字直接包含关键词，最后取名字最短的
 export function pickItem(items, keyword) {
   const wantsCombo = /套餐|件套/.test(keyword);
-  const hits = items.filter((m) => m.name.includes(keyword));
-  const score = (m) => (!wantsCombo && /套餐|件套/.test(m.name) ? 1000 : 0) + m.name.length;
+  const inOrder = (name) => {
+    let i = 0;
+    for (const ch of name) if (ch === keyword[i]) i++;
+    return i === keyword.length;
+  };
+  const hits = items.filter((m) => m.name.includes(keyword) || inOrder(m.name));
+  const score = (m) =>
+    (!wantsCombo && /套餐|件套/.test(m.name) ? 1000 : 0) + (m.name.includes(keyword) ? 0 : 100) + m.name.length;
   return hits.sort((a, b) => score(a) - score(b))[0] || null;
 }
 

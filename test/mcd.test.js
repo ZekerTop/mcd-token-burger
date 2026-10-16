@@ -100,6 +100,17 @@ test('pickItem 默认选单品，关键词含套餐时选套餐', () => {
   assert.equal(pickItem(items, '麦旋风'), null);
 });
 
+test('pickItem 能匹配菜单上差一两个字的叫法，仍优先单品', () => {
+  const items = [
+    { code: '9900000891', name: '麦辣鸡腿堡四件套' },
+    { code: '9900005456', name: '麦辣鸡腿汉堡三件套' },
+    { code: '1440', name: '麦辣鸡腿汉堡' },
+    { code: '1700', name: '麦辣鸡翅' },
+  ];
+  assert.equal(pickItem(items, '麦辣鸡腿堡').code, '1440');
+  assert.equal(pickItem([...items, { code: '1', name: '麦辣鸡腿堡' }], '麦辣鸡腿堡').code, '1');
+});
+
 test('早餐时段没有巨无霸时，按最近的非早餐预约时段核价', async () => {
   const breakfast = { 200001: { name: '猪柳蛋麦满分' } };
   const lunch = { 100001: { name: '巨无霸' } };
