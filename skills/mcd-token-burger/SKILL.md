@@ -29,6 +29,8 @@ npx -y github:ZekerTop/mcd-token-burger --json --days 7
 2. `query-meals`：`storeCode, orderType: 1, beType: 1`。在菜单里找名字含「巨无霸」的单品；用户指定了其他餐品就找那一个。
 3. `calculate-price`：`storeCode, orderType: 1, beType: 1, items: [{ productCode, quantity: 1 }]`。返回的 `price` 单位是**分**，已经包含门店自动优惠。
 
+早餐时段菜单里没有巨无霸，打烊后 `query-meals` 会报「门店可能已关闭」。遇到这两种情况，从门店返回的 `reservationTimeOptions` 里取最近一个非早餐时段（如「午餐(10:44至14:15)」取 `yyyy-MM-dd 10:44`），作为 `reservationDate` 加进第 2、3 步的参数，并告诉用户这是按哪个时段核的价。
+
 换算方法：`汉堡数 = cny ÷ (price / 100)`。
 
 ## 第 3 步：展示
@@ -48,7 +50,7 @@ npx -y github:ZekerTop/mcd-token-burger --json --days 7
 只有用户**明确要求**时才下单：
 
 1. 用第 2 步 `calculate-price` 返回的 `takeWayList[0].code` 作为 `takeWayCode`。
-2. 调用 `create-order`：`storeCode, orderType: 1, beType: 1, takeWayCode, items: [{ productCode, quantity: 1 }]`。
+2. 调用 `create-order`：`storeCode, orderType: 1, beType: 1, takeWayCode, items: [{ productCode, quantity: 1 }]`。如果第 2 步用了 `reservationDate`，这里也带上，并提前告诉用户这是预约单。
 3. 把返回的支付链接交给用户自己支付。
 
 本 Skill 不会自动付款。也可以直接运行 `npx -y github:ZekerTop/mcd-token-burger --city … --keyword … --order`，命令行会先确认再下单。

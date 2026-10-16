@@ -15,7 +15,7 @@
 | Tool | 用途 | 关键参数 | 用到的返回字段 |
 |---|---|---|---|
 | `query-nearby-stores` | 按城市和地点关键词找到店自取门店 | `searchType: 2`, `beType: 1`, `city`, `keyword` | `storeCode`、门店名、地址 |
-| `query-meals` | 获取门店当前在售菜单 | `storeCode`, `orderType: 1`, `beType: 1` | `meals` 中的餐品编码和名称 |
+| `query-meals` | 获取门店当前在售菜单 | `storeCode`, `orderType: 1`, `beType: 1`；当前时段没有该餐品时加 `reservationDate` | `meals` 中的餐品编码和名称 |
 | `calculate-price` | 对选中的餐品做官方核价 | 同上，加 `items: [{ productCode, quantity: 1 }]` | `price`（分，含门店自动优惠）、`originalPrice`、`takeWayList` |
 | `query-store-coupons` | 统计用户在该门店可用的券（有券时提示） | `storeCode`, `orderType: 1`, `beType: 1` | 券列表长度 |
 | `create-order` | 仅在用户加 `--order` 并确认后，创建 1 份到店订单（确认时会显示取餐方式） | 同核价参数，加 `takeWayCode`（取自 `takeWayList`） | 订单号、支付链接 |
@@ -28,6 +28,8 @@ Skill 模式下，如果 Agent 已接好麦当劳 MCP，会由 Agent 直接按�
 1. 本地读取 Claude Code / Codex 日志 → token 数 → 按 API 公开价折算成人民币（不调用 MCP）
 2. query-nearby-stores(city, keyword)       → 门店 storeCode
 3. query-meals(storeCode)                   → 找到「巨无霸」（或 --item 指定的餐品）的 productCode
+                                              早餐时段没有巨无霸、或门店已打烊时，用门店返回的 reservationTimeOptions
+                                              取最近一个非早餐时段作为 reservationDate 再查一次，后续核价、下单都带上
 4. calculate-price(storeCode, productCode)  → 实时到手价（分）
 5. query-store-coupons(storeCode)           → 用户在该门店可用的券数量（失败不影响主流程）
 6. 人民币 ÷ 到手价 = 汉堡数，在终端渲染卡片
@@ -47,4 +49,4 @@ Skill 模式下，如果 Agent 已接好麦当劳 MCP，会由 Agent 直接按�
 - 不自动付款。`create-order` 只在用户显式加 `--order` 并确认后调用，每次只点 1 份。
 - 不读取、不保存用户的订单历史、积分、地址等账户信息；门店券只取张数，不展示券的内容。
 - 仓库中没有真实 Token；配置文件只用 `${MCD_MCP_TOKEN}` 占位。
-- 每次运行最多调用 5 次 MCP，远低于官方每分钟 600 次的限制。
+- 每次运行最多调用 6 次 MCP，远低于官方每分钟 600 次的限制。

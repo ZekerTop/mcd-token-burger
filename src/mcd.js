@@ -80,14 +80,31 @@ export class McdClient {
     const stores = asList(data, ['stores', 'storeList', 'list']);
     if (!stores.length) throw new Error(`在「${city} ${keyword}」附近没有找到可到店自取的麦当劳`);
     const s = stores[0];
-    return { storeCode: s.storeCode, name: s.storeName || s.name, address: s.address, distance: s.distance };
+    return {
+      storeCode: s.storeCode,
+      name: s.storeName || s.name,
+      address: s.address,
+      distance: s.distance,
+      slots: s.reservation ? parseSlots(s.reservationTimeOptions) : [],
+    };
   }
 
+  // 早餐时段菜单里没有巨无霸，打烊后 query-meals 直接报错，这两种情况都改查最近一个非早餐的预约时段
   async findItem(store, keyword) {
-    const data = await this.call('query-meals', { storeCode: store.storeCode, ...PICKUP });
-    const item = pickItem(normalizeMeals(data), keyword);
-    if (!item) throw new Error(`「${store.name}」当前菜单里没有包含「${keyword}」的餐品`);
-    return item;
+    let closed = null;
+    const data = await this.call('query-meals', { storeCode: store.storeCode, ...PICKUP }).catch((err) => {
+      closed = err;
+      return null;
+    });
+    const item = data && pickItem(normalizeMeals(data), keyword);
+    if (item) return item;
+    const slot = (store.slots || []).find((x) => x.period !== '早餐');
+    if (slot) {
+      const later = await this.call('query-meals', { storeCode: store.storeCode, ...PICKUP, reservationDate: slot.time });
+      const found = pickItem(normalizeMeals(later), keyword);
+      if (found) return { ...found, reservation: slot };
+    }
+    throw closed || new Error(`「${store.name}」当前菜单里没有包含「${keyword}」的餐品`);
   }
 
   // calculate-price 是官方核价，金额单位为分，已含门店自动优惠
@@ -95,6 +112,7 @@ export class McdClient {
     const data = await this.call('calculate-price', {
       storeCode: store.storeCode,
       ...PICKUP,
+      ...(item.reservation && { reservationDate: item.reservation.time }),
       items: [{ productCode: item.code, quantity: 1 }],
     });
     const fen = Number(data.price);
@@ -112,6 +130,7 @@ export class McdClient {
     const data = await this.call('create-order', {
       storeCode: store.storeCode,
       ...PICKUP,
+      ...(item.reservation && { reservationDate: item.reservation.time }),
       takeWayCode,
       items: [{ productCode: item.code, quantity: 1 }],
     });
@@ -171,6 +190,17 @@ function parseObjectAt(text, start) {
     }
   }
   return null;
+}
+
+// 「午餐(10:44至14:15)，下午茶(14:44至16:45)」→ [{ date, period, time: 'yyyy-MM-dd HH:mm' }]，按时间先后
+export function parseSlots(options = []) {
+  const slots = [];
+  for (const o of options || []) {
+    for (const m of String(o.reservationOptionText || '').matchAll(/([^，,(（\s]+)[(（](\d{2}:\d{2})至(\d{2}:\d{2})[)）]/g)) {
+      slots.push({ date: o.date, period: m[1], time: `${o.date} ${m[2]}` });
+    }
+  }
+  return slots.sort((a, b) => a.time.localeCompare(b.time));
 }
 
 function asList(data, keys) {

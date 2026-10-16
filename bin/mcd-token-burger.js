@@ -65,6 +65,8 @@ function period(opts) {
 }
 
 const hhmm = (d) => d.toTimeString().slice(0, 5);
+const today = () => new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+const slotLabel = (slot) => `${slot.date === today() ? '今天' : slot.date}${slot.period}`;
 
 async function burgerPrice(opts) {
   const client = new McdClient({ token: process.env.MCD_MCP_TOKEN });
@@ -112,7 +114,9 @@ async function main() {
       priceFen: mcd.price.fen,
       coupons: mcd.coupons,
       priceLabel:
-        `${mcd.store.name} · ${mcd.item.name} ${fmtMoney(yuan, '¥')}（麦当劳 MCP 实时核价 ${hhmm(mcd.at)}）` +
+        `${mcd.store.name} · ${mcd.item.name} ${fmtMoney(yuan, '¥')}（麦当劳 MCP 实时核价 ${hhmm(mcd.at)}` +
+        (mcd.item.reservation ? ` · 现在没在卖，按${slotLabel(mcd.item.reservation)}时段` : '') +
+        '）' +
         (mcd.coupons ? ` · 你有 ${mcd.coupons} 张券可在这家店用` : ''),
     };
     if (!opts.order) result.hint = `AI 吃了 ${Math.floor(result.burger.count)} 个，你也吃一个？加上 --order 生成下单链接`;
@@ -138,7 +142,7 @@ async function main() {
   if (!takeWay?.code) throw new Error('核价结果没有返回取餐方式（takeWayList），无法下单');
   const ok =
     opts.yes ||
-    (await confirm(`将在「${mcd.store.name}」创建 1 份「${mcd.item.name}」到店订单，取餐方式「${takeWay.title || takeWay.code}」（待支付，不会自动扣款）。继续？[y/N] `));
+    (await confirm(`将在「${mcd.store.name}」创建 1 份「${mcd.item.name}」到店订单，取餐方式「${takeWay.title || takeWay.code}」${mcd.item.reservation ? `，预约 ${mcd.item.reservation.time} 取餐` : ''}（待支付，不会自动扣款）。继续？[y/N] `));
   if (!ok) return console.log('已取消，没有创建订单。');
   const order = await mcd.client.createOrder(mcd.store, mcd.item, takeWay.code);
   console.log(`\n  订单已创建${order.orderId ? `：${order.orderId}` : ''}，状态为待支付。`);

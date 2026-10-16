@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { McdClient, extractJson, normalizeMeals, parseSse, pickItem } from '../src/mcd.js';
+import { McdClient, extractJson, normalizeMeals, parseSlots, parseSse, pickItem } from '../src/mcd.js';
 
 // 模拟麦当劳 MCP：工具返回「说明文字 + 业务 JSON」，用 SSE 回包
 function fakeServer(tools) {
@@ -98,4 +98,50 @@ test('pickItem 默认选单品，关键词含套餐时选套餐', () => {
   assert.equal(pickItem(items, '巨无霸').code, '2');
   assert.equal(pickItem(items, '巨无霸套餐').code, '1');
   assert.equal(pickItem(items, '麦旋风'), null);
+});
+
+test('早餐时段没有巨无霸时，按最近的非早餐预约时段核价', async () => {
+  const breakfast = { 200001: { name: '猪柳蛋麦满分' } };
+  const lunch = { 100001: { name: '巨无霸' } };
+  const { fetchImpl, calls } = fakeServer({
+    ...tools,
+    'query-nearby-stores': () => ({
+      success: true,
+      data: [{
+        storeCode: '1450001', storeName: '麦当劳科技园餐厅', reservation: true,
+        reservationTimeOptions: [
+          { date: '2026-10-16', reservationOptionText: '早餐(07:14至10:15)，午餐(10:44至14:15)，下午茶(14:44至16:45)' },
+        ],
+      }],
+    }),
+    'query-meals': (args) => ({ success: true, data: { meals: args.reservationDate ? lunch : breakfast } }),
+  });
+  const c = new McdClient({ token: 't', fetchImpl });
+  const store = await c.findStore({ city: '深圳', keyword: '科技园' });
+  const item = await c.findItem(store, '巨无霸');
+  assert.deepEqual(item.reservation, { date: '2026-10-16', period: '午餐', time: '2026-10-16 10:44' });
+  await c.priceItem(store, item);
+  const priceCall = calls.filter((x) => x.body.method === 'tools/call').at(-1).body.params;
+  assert.equal(priceCall.arguments.reservationDate, '2026-10-16 10:44');
+});
+
+test('parseSlots 解析门店预约时段并按时间排序', () => {
+  const slots = parseSlots([
+    { date: '2026-10-17', reservationOptionText: '早餐(07:14至10:15)' },
+    { date: '2026-10-16', reservationOptionText: '夜市(17:14至21:45)，宵夜(22:14至22:46)' },
+  ]);
+  assert.deepEqual(slots.map((x) => x.time), ['2026-10-16 17:14', '2026-10-16 22:14', '2026-10-17 07:14']);
+  assert.deepEqual(parseSlots(undefined), []);
+});
+
+test('打烊时 query-meals 报错，也会改用预约时段；没有预约时段则抛出原错误', async () => {
+  const store = { storeCode: '1450001', name: '麦当劳科技园餐厅', slots: parseSlots([{ date: '2026-10-17', reservationOptionText: '早餐(07:14至10:15)，午餐(10:44至14:15)' }]) };
+  const { fetchImpl } = fakeServer({
+    'query-meals': (args) => (args.reservationDate
+      ? { success: true, data: { meals: { 100001: { name: '巨无霸' } } } }
+      : { success: false, message: '门店可能已关闭或不在营业时间' }),
+  });
+  const c = new McdClient({ token: 't', fetchImpl });
+  assert.equal((await c.findItem(store, '巨无霸')).reservation.time, '2026-10-17 10:44');
+  await assert.rejects(c.findItem({ ...store, slots: [] }, '巨无霸'), /已关闭/);
 });
