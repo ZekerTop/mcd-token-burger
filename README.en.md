@@ -217,6 +217,18 @@ McDonald's MCP: query-nearby-stores → query-meals → calculate-price ──�
                                                               RMB ÷ unit price = burgers
 ```
 
+**The exchange rate: how many tokens make one Big Mac?** The card shows a line like "1 个巨无霸 ≈ N 万 token" (1 Big Mac ≈ N × 10,000 tokens). That's the "Token-to-Burger exchange rate" in the project name. It's calculated, not fixed:
+
+```text
+rate = Big Mac price ÷ average API price per token
+```
+
+From the author's machine over the last 7 days: 2.399 billion tokens cost about ¥4,661.93 at API prices, an average of ¥1.94 per million tokens. A Big Mac costs ¥25.50, so 1 Big Mac ≈ 13.12 million tokens.
+
+Why do the totals so often reach hundreds of millions? On every step, an agent sends the whole conversation and every file it has read back to the model, so the same context gets counted dozens of times. These are cache reads. On the author's machine, 96% of tokens were cache reads, and only 99.04 million tokens were newly processed. Cache reads cost a tenth of the normal input price or less, so hundreds of millions of tokens don't cost hundreds of millions of tokens' worth of money. The card lists this share separately.
+
+The rate depends on two things: the store's price and how you use AI. The higher your cache share and the cheaper your models, the cheaper each token is, and the more tokens one Big Mac is worth.
+
 - **Claude Code**: reads `usage` from each response in `~/.claude/projects/**/*.jsonl`. One response can appear on several log lines, so entries are deduplicated by `message.id + requestId`.
 - **Codex**: reads `token_count` events from `~/.codex/sessions` and `archived_sessions`, and works out each turn's usage from the difference between running session totals. Resumed or forked session files start with the earlier totals, so those entries use only `last_token_usage` to avoid double counting.
 - **Prices**: input, output, cache writes and cache reads are priced separately. Claude prices come from Anthropic's official price list. GPT prices come from a third-party price tracker and **haven't been checked against OpenAI's official pricing**. Models missing from the table are estimated at the latest model in the same family and marked as estimates. The price table is in [`src/pricing.js`](src/pricing.js).

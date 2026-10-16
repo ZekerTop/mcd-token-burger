@@ -142,6 +142,7 @@ function summarize(byModel) {
   return {
     models,
     tokens: models.reduce((s, m) => s + m.total, 0),
+    cacheRead: models.reduce((s, m) => s + m.tokens.cacheRead, 0),
     usd: models.reduce((s, m) => s + m.usd, 0),
     estimated: models.some((m) => m.estimated),
   };
@@ -154,6 +155,7 @@ export async function scanUsage({ since, dirs = defaultDirs() }) {
     since,
     sources,
     tokens: sources.claude.tokens + sources.codex.tokens,
+    cacheRead: sources.claude.cacheRead + sources.codex.cacheRead,
     usd: sources.claude.usd + sources.codex.usd,
     estimated: sources.claude.estimated || sources.codex.estimated,
   };

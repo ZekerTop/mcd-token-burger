@@ -109,6 +109,8 @@ async function main() {
     const yuan = mcd.price.fen / 100;
     result.burger = {
       count: cny / yuan,
+      // 汇率：1 份餐品折合多少 token = 到手价 ÷ 平均每 token 的 API 价
+      tokensPerBurger: cny > 0 ? Math.round((usage.tokens * yuan) / cny) : null,
       item: mcd.item.name,
       store: mcd.store,
       priceFen: mcd.price.fen,

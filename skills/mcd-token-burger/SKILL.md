@@ -17,7 +17,7 @@ npx -y github:ZekerTop/mcd-token-burger --json --days 7
 
 - 统计范围可改成 `--today` 或 `--since YYYY-MM-DD`。
 - 只读取本机 `~/.claude/projects` 和 `~/.codex/sessions` 里的日志，不上传任何内容。
-- 从输出 JSON 里取 `usage.tokens`、`usage.usd`、`cny`、`usage.estimated`。
+- 从输出 JSON 里取 `usage.tokens`、`usage.cacheRead`、`usage.usd`、`cny`、`usage.estimated`；有实时核价时还有 `burger.count`、`burger.tokensPerBurger`。
 
 如果环境变量里已有 `MCD_MCP_TOKEN`，并且知道用户所在城市和地点，直接加上 `--city <城市> --keyword <地点>`。这样 `burger` 字段会包含实时核价和换算结果，第 2 步可以跳过。
 
@@ -31,13 +31,18 @@ npx -y github:ZekerTop/mcd-token-burger --json --days 7
 
 早餐时段菜单里没有巨无霸，打烊后 `query-meals` 会报「门店可能已关闭」。遇到这两种情况，从门店返回的 `reservationTimeOptions` 里取最近一个非早餐时段（如「午餐(10:44至14:15)」取 `yyyy-MM-dd 10:44`），作为 `reservationDate` 加进第 2、3 步的参数，并告诉用户这是按哪个时段核的价。
 
-换算方法：`汉堡数 = cny ÷ (price / 100)`。
+换算方法：`汉堡数 = cny ÷ (price / 100)`，`汇率（1 个汉堡折合多少 token）= usage.tokens ÷ 汉堡数`。
 
 ## 第 3 步：展示
 
 先给结论，例如：
 
-> 最近 7 天你让 AI 烧掉了 20.29 亿 token，按 API 公开价约 ¥4,349.77，相当于 XX 个巨无霸（XX 门店实时价 ¥XX）。
+> 最近 7 天你让 AI 烧掉了 23.99 亿 token，按 API 公开价约 ¥4,661.93，相当于 182.8 个巨无霸（XX 门店实时价 ¥25.50）。汇率是 1 个巨无霸 ≈ 1,312 万 token。
+
+接着用一两句话说清两件事：
+
+- **几亿 token 里大部分是缓存重读**：用 `usage.cacheRead ÷ usage.tokens` 算出占比。Agent 每走一步都会把整段上下文重新发给模型，同一段内容被反复计数，所以总数很大；`usage.tokens − usage.cacheRead` 才是实际新处理的量。
+- **汇率为什么是这个数**：`汇率 = 到手价 ÷ 平均每 token 的 API 价`。缓存重读的单价只有正常输入的一折或更低，所以缓存占比越高，每个 token 越便宜，1 个汉堡折合的 token 就越多。这个汇率不是固定值，会随门店价格和用户的用法变化。
 
 然后说明三点口径：
 

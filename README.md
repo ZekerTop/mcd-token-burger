@@ -215,6 +215,18 @@ npx -y github:ZekerTop/mcd-token-burger --city 深圳 --keyword 科技园 --orde
                                                      人民币 ÷ 单价 = 汉堡数
 ```
 
+**汇率：1 个巨无霸折合多少 token？** 卡片上会写一行「1 个巨无霸 ≈ N 万 token」，这就是项目名里的「Token 汉堡汇率」。它是算出来的，不是定死的：
+
+```text
+汇率 = 巨无霸到手价 ÷ 平均每 token 的 API 价
+```
+
+作者本机最近 7 天的数据：23.99 亿 token 按 API 价约 ¥4,661.93，平均每百万 token ¥1.94；巨无霸 ¥25.50，所以 1 个巨无霸 ≈ 1,312 万 token。
+
+为什么动不动就几亿 token？因为 Agent 每走一步，都要把整段对话和读过的文件重新发给模型一次，同一段上下文会被重复计数几十次，这部分叫「缓存重读」。作者本机 96% 的 token 都是缓存重读，实际新处理的只有 9,904 万。缓存重读的单价只有正常输入的一折或更低，所以几亿 token 换不出几亿份的钱。卡片会把这个占比单独列出来。
+
+汇率会随两件事变化：门店价格，以及你的用法。缓存占比越高、用的模型越便宜，每个 token 就越便宜，1 个巨无霸折合的 token 也就越多。
+
 - **Claude Code**：读取 `~/.claude/projects/**/*.jsonl` 里每条回复的 `usage`。同一条回复在日志里会被拆成多行，所以按 `message.id + requestId` 去重。
 - **Codex**：读取 `~/.codex/sessions` 和 `archived_sessions` 里的 `token_count` 事件，用会话累计值的差值算出每次消耗。续接或分叉出来的会话文件会带着之前的累计值，这部分只取 `last_token_usage`，避免重复计算。
 - **价格**：输入、输出、写缓存、读缓存分别计价。Claude 按 Anthropic 官方价目表；GPT 系列用的是第三方价格追踪站的数据，**没有经过 OpenAI 官网核对**。遇到价目表里没有的型号，按同家族最新型号估算，并标注「含估算」。价目表在 [`src/pricing.js`](src/pricing.js)。
