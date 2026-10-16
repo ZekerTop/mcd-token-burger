@@ -53,7 +53,13 @@ npx -y github:ZekerTop/mcd-token-burger --json --days 7
 2. 调用 `create-order`：`storeCode, orderType: 1, beType: 1, takeWayCode, items: [{ productCode, quantity: 1 }]`。如果第 2 步用了 `reservationDate`，这里也带上，并提前告诉用户这是预约单。
 3. 把返回的支付链接交给用户自己支付。
 
-本 Skill 不会自动付款。也可以直接运行 `npx -y github:ZekerTop/mcd-token-burger --city … --keyword … --order`，命令行会先确认再下单。
+没有连接麦当劳 MCP、但环境变量里有 `MCD_MCP_TOKEN` 时，改用命令行下单：
+
+1. 先在对话里告诉用户门店、餐品、价格和取餐方式，问清楚要不要下单。
+2. 用户明确同意后，运行 `npx -y github:ZekerTop/mcd-token-burger --today --city <城市> --keyword <地点> --order --yes`。必须加 `--yes`，否则命令行会停在 `[y/N]` 确认提示上，Agent 没法回答。
+3. 从输出里找到订单号和支付链接，交给用户。
+
+本 Skill 不会自动付款。
 
 ## 边界
 
