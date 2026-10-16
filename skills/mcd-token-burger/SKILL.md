@@ -1,6 +1,6 @@
 ---
 name: mcd-token-burger
-description: 把用户在 Claude Code / Codex 里消耗的 AI token 按 API 公开价折算成人民币，再用麦当劳 MCP 查附近门店的实时核价，换算成「AI 吃掉了几个巨无霸」，可选生成一份待支付的到店自取订单。用户说「我的 token 能换几个汉堡」「AI 这周吃了多少个巨无霸」「token 汉堡汇率」时使用。
+description: 把用户在 Claude Code / Codex 里消耗的 AI token 按 API 公开价折算成人民币，再用麦当劳 MCP 查附近门店的实时核价，换算成「AI 吃掉了几个巨无霸」，用户要求时生成一份待支付的到店订单（不自动付款）。用户说「我的 token 能换几个汉堡」「AI 这周吃了多少个巨无霸」「token 汉堡汇率」时使用。
 ---
 
 # Token 汉堡汇率
