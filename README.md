@@ -187,7 +187,7 @@ npx -y github:ZekerTop/mcd-token-burger --city 深圳 --keyword 科技园 --orde
 npx -y github:ZekerTop/mcd-token-burger --city 深圳 --keyword 科技园 --order --pickup 外带
 ```
 
-![下单前的确认](docs/images/order.png)
+![外带下单前的确认](docs/images/order.png)
 
 ### 全部参数
 
@@ -224,9 +224,9 @@ npx -y github:ZekerTop/mcd-token-burger --city 深圳 --keyword 科技园 --orde
 汇率 = 巨无霸到手价 ÷ 平均每 token 的 API 价
 ```
 
-作者本机最近 7 天的数据：24.14 亿 token 按 API 价约 ¥4,675.68，平均每百万 token ¥1.94；巨无霸 ¥25.50，所以 1 个巨无霸 ≈ 1,317 万 token。
+作者本机最近 7 天的数据：24.61 亿 token 按 API 价约 ¥4,725.00，平均每百万 token ¥1.92；巨无霸 ¥25.50，所以 1 个巨无霸 ≈ 1,328 万 token。
 
-为什么动不动就几亿 token？因为 Agent 每走一步，都要把整段对话和读过的文件重新发给模型一次，同一段上下文会被重复计数几十次，这部分叫「缓存重读」。作者本机 96% 的 token 都是缓存重读，实际新处理的只有 9,929 万。缓存重读的单价只有正常输入的一折或更低，所以几亿 token 换不出几亿份的钱。卡片会把这个占比单独列出来。
+为什么动不动就几亿 token？因为 Agent 每走一步，都要把整段对话和读过的文件重新发给模型一次，同一段上下文会被重复计数几十次，这部分叫「缓存重读」。作者本机 96% 的 token 都是缓存重读，实际新处理的只有 9,911 万。缓存重读的单价只有正常输入的一折或更低，所以几亿 token 换不出几亿份的钱。卡片会把这个占比单独列出来。
 
 汇率会随两件事变化：门店价格，以及你的用法。缓存占比越高、用的模型越便宜，每个 token 就越便宜，1 个巨无霸折合的 token 也就越多。
 
